@@ -1,5 +1,7 @@
 # Svelte App
 
+[![Lint](https://github.com/0918nobita/svelte-practice/actions/workflows/lint.yml/badge.svg)](https://github.com/0918nobita/svelte-practice/actions/workflows/lint.yml)
+
 ## Install dependencies
 
 ```bash
