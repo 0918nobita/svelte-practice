@@ -4,79 +4,72 @@ import resolve from '@rollup/plugin-node-resolve';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import sveltePreprocess from 'svelte-preprocess';
-import typescript from '@rollup/plugin-typescript';
+import typescript from 'rollup-plugin-typescript2';
 import css from 'rollup-plugin-css-only';
 import { spawn } from 'child_process';
 
 const production = !process.env.ROLLUP_WATCH;
 
-const serve = () => {
-    let server;
-
-    const toExit = () => { if (server) server.kill(0); }
-
-    return {
-        writeBundle() {
-            if (server) return;
-            server = spawn('pnpm', ['start', '--', '--dev'], {
-                stdio: ['ignore', 'inherit', 'inherit'],
-                shell: true,
-            });
-
-            process.on('SIGTERM', toExit);
-            process.on('exit', toExit);
-        },
-    };
-};
-
-export default {
-    input: 'src/main.ts',
-    output: {
-        sourcemap: true,
-        format: 'iife',
-        name: 'app',
-        file: 'public/build/bundle.js',
+const sveltePlugin = svelte({
+    preprocess: sveltePreprocess({ sourceMap: !production }),
+    compilerOptions: {
+        dev: !production, // enable run-time checks when not in production
     },
-    plugins: [
-        svelte({
-            preprocess: sveltePreprocess({ sourceMap: !production }),
-            compilerOptions: {
-                // enable run-time checks when not in production
-                dev: !production,
-            },
-        }),
-        // we'll extract any component CSS out into
-        // a separate file - better for performance
-        css({ output: 'bundle.css' }),
+});
 
-        // If you have external dependencies installed from
-        // npm, you'll most likely need these plugins. In
-        // some cases you'll need additional configuration -
-        // consult the documentation for details:
-        // https://github.com/rollup/plugins/tree/master/packages/commonjs
-        resolve({
-            browser: true,
-            dedupe: ['svelte'],
-        }),
+// we'll extract any component CSS out into a separate file - better for performance
+const cssPlugin = css({ output: 'bundle.css' });
+
+// If you have external dependencies installed from npm, you'll most likely need these plugins.
+// In some cases you'll need additional configuration - consult the documentation for details:
+// https://github.com/rollup/plugins/tree/master/packages/commonjs
+const resolvePlugin = resolve({
+    browser: true,
+    dedupe: ['svelte'],
+});
+
+const baseConfig = {
+    plugins: [
+        sveltePlugin,
+        cssPlugin,
+        resolvePlugin,
         commonjs(),
         typescript({
             sourceMap: !production,
             inlineSources: !production,
         }),
 
-        // In dev mode, call `pnpm start` once
-        // the bundle has been generated
-        !production && serve(),
-
-        // Watch the `public` directory and refresh the
-        // browser on changes when not in production
+        // Watch the `public` directory and refresh the browser on changes when not in production
         !production && livereload('public'),
 
-        // If we're building for production (pnpm build
-        // instead of pnpm dev), minify
+        // If we're building for production (pnpm build instead of pnpm dev), minify
         production && terser(),
     ],
     watch: {
         clearScreen: false,
     },
 };
+
+if (!production) {
+    const server = spawn('pnpm', ['start', '--', '--dev'], {
+        stdio: ['ignore', 'inherit', 'inherit'],
+        shell: true,
+    });
+
+    const toExit = () => server.kill(0);
+    process.on('SIGTERM', toExit);
+    process.on('exit', toExit);
+}
+
+export default [
+    {
+        ...baseConfig,
+        input: 'src/main.ts',
+        output: {
+            sourcemap: true,
+            format: 'iife',
+            name: 'app',
+            file: 'public/build/bundle.js',
+        },
+    },
+];
