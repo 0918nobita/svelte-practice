@@ -1,14 +1,14 @@
 <script lang="ts">
-    export let name = "world";
+    export let name = 'world';
 
-    let msg = "message";
+    let msg = 'message';
     $: computed = `[${msg.toUpperCase()}]`;
 
     let err = false;
-    let text = "";
+    let text = '';
 
     const focusOutHandler = () => {
-        err = text === "";
+        err = text === '';
     };
 </script>
 

@@ -8,7 +8,7 @@ module.exports = {
         browser: true,
         node: true,
     },
-    extends: ['eslint:recommended'],
+    extends: ['eslint:recommended', 'prettier'],
     ignorePatterns: ['node_modules', 'public'],
     overrides: [
         {
